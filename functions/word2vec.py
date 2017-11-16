@@ -23,24 +23,33 @@ def createRIASEC(data):
     dataOut = [x[0] for x in columns if x != None]
     return ''.join(dataOut)
 
-def riasecSplit(data): 
-    """ Takes a RIASEC code and returns a series with the First, Second, and Third RIASEC code letters.
-    
-        Keyword arguments: 
-        data : Pandas ROW (series)
-    """
-    dataOut = [True  if x in data['riasec'] else False for x in riasecCode]
-    return pd.Series(dataOut)
-
 
 def preprocessText(txt, stopwords): 
-    """Use gensim simple preprocess and remove stopwords"""
+    """Returns a list of words after running text string through gensims simple preprocess and removing stopwords. 
+    
+    Keyword arguments:
+    txt : String of text you wish to preprocess
+    stopwords: List of words you wish to remove from string
+    
+    """
+    
     stopwords = stopwords
     txt = gensim.utils.simple_preprocess(txt)
     return  [word for word in txt if word not in stopwords]
 
 def average_word_embedding(data, model, keyed = False): 
-    """Return the average word embedding"""
+    """Return a series of the average word embedding
+    
+    Keyword arguments: 
+    data : Pandas or numpy series 
+    model: gensim model 
+    keyed: If True the function will use a KeyedVectors instance common for 
+           other training such as Fastext, WordRank, or VarEmbed. If False 
+           the function will use a keyed format.   
+           
+    NOTE: Returned variables are labled starting with d0 and running through the length of the dimentions 
+    """
+    
     out = []
     
     # Handle keyed vectors 
@@ -59,7 +68,15 @@ def average_word_embedding(data, model, keyed = False):
     return pd.Series({'d' + str(idx):x for idx, x in enumerate(avg)})
 
 def cosine_similarity(target_vector, row): 
-    """Determine the cosine similarity"""
+    """Returns the cosine similarity 
+       Reference: https://en.wikipedia.org/wiki/Cosine_similarity
+       
+       Keyword arguments
+       target_vector: A Pandas or numpy series representing a single case of interest 
+       row: row of interest 
+   
+    """
+    
     job1 = target_vector
     job2 = row.loc['d0':].values
     numerator = np.dot(job1,job2)
@@ -67,7 +84,15 @@ def cosine_similarity(target_vector, row):
     return pd.Series([numerator/denominator])
 
 def find_jobs(data, soc, topN, bottomN): 
-    """ Given the ONET job DF and a SOC code find the top and bottom similar jobs """
+    """ Given the O*NET code print the most and least similar jobs
+    
+        Keyword arguments
+        data: Pandas dataframe 
+        soc: O*NET SOC code 
+        topN: Number of top results you wish returned
+        bottomN: Number of bottom results you wish returned 
+    
+    """
 
     # Create a DF of the target and non-target jobs
     target = data[data['onetsoc_code'] == soc]
@@ -104,16 +129,31 @@ def find_jobs(data, soc, topN, bottomN):
 
 
 def model_comparison(data1, data2, soc): 
-    """ Given two dataframes using diffferent modesl see show similar they are """
+    """ Returns a dictionary of data frames after calculating the cosine similarity.  
+        
+        Keyword arguments
+        data1: Pandas dataframe 1
+        data2: Pandas dataframe 2 
+        soc: O*NET soc code of interest 
+    
+    """
+    
+        
     
     def calc(data, soc):
-        """ Return the top and bottom most similiar jobs"""
+        """ Return a dataframe of sorted jobs 
+            
+            Keyword arguments
+            data: Pandas dataframe of interest
+            soc: O*NET soc code of interest 
+        
+        """
         # Create a DF of the target and non-target jobs
-        target = data[data['soc'] == soc]
-        df = data[data['soc'] != soc]
+        target = data[data['onetsoc_code'] == soc]
+        df = data[data['onetsoc_code'] != soc]
 
         # Create target vector 
-        target_vector = data[data['soc'] == soc].loc[:, 'd0':].values[0]
+        target_vector = data[data['onetsoc_code'] == soc].loc[:, 'd0':].values[0]
 
         # Run similarities 
         s = df.apply(lambda x: cosine_similarity(target_vector, x), axis = 1)
@@ -128,6 +168,15 @@ def model_comparison(data1, data2, soc):
     
     return out
 
-def listcomparision(list1, list2): 
-    """ Determine the similarity between two lists"""
-    return len(set(list1) & set(list2)) / float(len(set(list1) | set(list2))) * 100
+def listcomparision(l1, l2): 
+    """ Return the percentage of similar items between two lists 
+    
+        Keyword arguements 
+        l1: List1 for comparison 
+        l2: List2 for comparison
+    
+    """
+    total_common_elements = len(set(l1) & set(l2)) * 2
+    total_elements = len(l1) + len(l2)
+    percent_agreement = total_common_elements / total_elements * 100
+    return percent_agreement
