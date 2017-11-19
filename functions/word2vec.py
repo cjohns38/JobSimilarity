@@ -109,23 +109,20 @@ def find_jobs(data, soc, topN, bottomN):
     df.sort_values(by = 'similarity', ascending = False, inplace = True)
 
     # Print the top N 
-    top = df[['title', 'similarity']].head(topN).values.tolist()
+    top = df[['title', 'similarity', 'riasec', 'onetsoc_code']].head(topN).values.tolist()
 
     # Print the bottom N 
-    bottom = df[['title', 'similarity']].tail(bottomN).values.tolist()
-
-    # Print results 
-    print("For the job of {0}...".format(target['title'].values[0]))
+    bottom = df[['title', 'similarity', 'riasec', 'onetsoc_code']].tail(bottomN).values.tolist()
 
     # Top 
     print("The most similiar jobs are...".format(target['title'].values[0]))
     for job in top: 
-        print("\t {0}".format(job[0]))
+        print("\t {0}; cosine:{1:.2f}; O*NET:{2}; Holland code:{3}".format(job[0], job[1], job[3], job[2]))
 
     # Bottom 
     print("The least similar jobs are...")
     for job in bottom: 
-        print('\t {0}'.format(job[0]))
+        print("\t {0}; cosine:{1:.2f}; O*NET:{2}; Holland code:{3}".format(job[0], job[1], job[3], job[2]))
 
 
 def model_comparison(data1, data2, soc): 
